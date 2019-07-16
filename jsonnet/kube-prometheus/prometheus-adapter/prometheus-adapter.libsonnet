@@ -68,6 +68,26 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
         },
       },
 
+    apiServiceCustomMetrics:
+      {
+        apiVersion: 'apiregistration.k8s.io/v1',
+        kind: 'APIService',
+        metadata: {
+          name: 'v1beta1.custom.metrics.k8s.io',
+        },
+        spec: {
+          service: {
+            name: $.prometheusAdapter.service.metadata.name,
+            namespace: $._config.namespace,
+          },
+          group: 'custom.metrics.k8s.io',
+          version: 'v1beta1',
+          insecureSkipTLSVerify: true,
+          groupPriorityMinimum: 100,
+          versionPriority: 100,
+        },
+      },
+
     configMap:
       local configmap = k.core.v1.configMap;
 
@@ -142,6 +162,20 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
       clusterRole.mixin.metadata.withName($._config.prometheusAdapter.name) +
       clusterRole.withRules(rules),
 
+    clusterRoleCustomMetrics:
+      local clusterRole = k.rbac.v1.clusterRole;
+      local policyRule = clusterRole.rulesType;
+
+      local rules =
+        policyRule.new() +
+        policyRule.withApiGroups(['custom.metrics.k8s.io']) +
+        policyRule.withResources(["*"]) +
+        policyRule.withVerbs(["*"]);
+
+      clusterRole.new() +
+      clusterRole.mixin.metadata.withName('custom-metrics-server-resources') +
+      clusterRole.withRules(rules),
+
     clusterRoleBinding:
       local clusterRoleBinding = k.rbac.v1.clusterRoleBinding;
 
@@ -154,6 +188,34 @@ local k = import 'ksonnet/ksonnet.beta.4/k.libsonnet';
         kind: 'ServiceAccount',
         name: $.prometheusAdapter.serviceAccount.metadata.name,
         namespace: $._config.namespace,
+      }]),
+
+    clusterRoleBindingCustomMetrics:
+      local clusterRoleBinding = k.rbac.v1.clusterRoleBinding;
+
+      clusterRoleBinding.new() +
+      clusterRoleBinding.mixin.metadata.withName('custom-metrics-server-resources') +
+      clusterRoleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
+      clusterRoleBinding.mixin.roleRef.withName('custom-metrics-server-resources') +
+      clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
+      clusterRoleBinding.withSubjects([{
+        kind: 'ServiceAccount',
+        name: $.prometheusAdapter.serviceAccount.metadata.name,
+        namespace: $._config.namespace,
+      }]),
+
+    clusterRoleBindingHpaController:
+      local clusterRoleBinding = k.rbac.v1.clusterRoleBinding;
+
+      clusterRoleBinding.new() +
+      clusterRoleBinding.mixin.metadata.withName('hpa-controller-custom-metrics') +
+      clusterRoleBinding.mixin.roleRef.withApiGroup('rbac.authorization.k8s.io') +
+      clusterRoleBinding.mixin.roleRef.withName('custom-metrics-server-resources') +
+      clusterRoleBinding.mixin.roleRef.mixinInstance({ kind: 'ClusterRole' }) +
+      clusterRoleBinding.withSubjects([{
+        kind: 'ServiceAccount',
+        name: 'horizontal-pod-autoscaler',
+        namespace: 'kube-system',
       }]),
 
     clusterRoleBindingDelegator:

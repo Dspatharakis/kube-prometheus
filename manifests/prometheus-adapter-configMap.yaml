@@ -27,6 +27,14 @@ data:
               resource: pod
         containerLabel: container_name
       window: 1m
+    rules:
+    - seriesQuery: '{__name__="flask_http_request_total",namespace!="",pod_name!="",status="200"}'
+      resources:
+        template: <<.Resource>>
+      name:
+        matches: ^(.*)_total$
+        as: "${1}s_per_second"
+      metricsQuery: sum(rate(<<.Series>>{<<.LabelMatchers>>}[30s])) by (<<.GroupBy>>)
 kind: ConfigMap
 metadata:
   name: adapter-config
