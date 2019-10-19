@@ -28,7 +28,7 @@ data:
         containerLabel: container_name
       window: 1m
     rules:
-    - seriesQuery: '{__name__="flask_http_request_total",namespace!="",pod_name!="",status="200"}'
+    - seriesQuery: '{__name__="flask_http_request_total",pod!="",namespace!=""}'
       resources:
         template: <<.Resource>>
       name:

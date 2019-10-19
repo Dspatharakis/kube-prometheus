@@ -15,6 +15,27 @@ local kp =
         config+:: (importstr 'prometheus-adapter-extra-conf.yaml'),
       },
     },
+    prometheusRules+:: {
+      groups+: [
+        {
+          name: 'custom-metrics-group',
+          rules: [
+            {
+              record: 'flask_latency_per_30',
+              expr: 'rate(flask_http_request_duration_seconds_sum[30s])/rate(flask_http_request_duration_seconds_count[30s])',
+            },
+            {
+              record: 'flask_latency_per_60',
+              expr: 'rate(flask_http_request_duration_seconds_sum[60s])/rate(flask_http_request_duration_seconds_count[60s])',
+            },
+            {
+              record: 'flask_latency_per_120',
+              expr: 'rate(flask_http_request_duration_seconds_sum[120s])/rate(flask_http_request_duration_seconds_count[120s])',
+            },
+          ],
+        },
+      ],
+   },
   };
 
 { ['00namespace-' + name]: kp.kubePrometheus[name] for name in std.objectFields(kp.kubePrometheus) } +
