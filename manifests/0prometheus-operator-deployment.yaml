@@ -42,6 +42,15 @@ spec:
           allowPrivilegeEscalation: false
       nodeSelector:
         beta.kubernetes.io/os: linux
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - k-master
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534

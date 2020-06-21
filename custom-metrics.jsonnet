@@ -11,26 +11,35 @@ local kp =
     _config+:: {
       namespace: 'monitoring',
       // append extra configuration in prometheus adapter config (config.yaml)
-      prometheusAdapter+:: {
-        config+:: (importstr 'prometheus-adapter-extra-conf.yaml'),
-      },
+      // prometheusAdapter+:: {
+      //   config+:: (importstr 'prometheus-adapter-extra-conf.yaml'),
+      // },
     },
     prometheusRules+:: {
       groups+: [
         {
-          name: 'custom-metrics-group',
+          name: 'edge-server-tf-record-rules',
+          interval: '30s',
           rules: [
             {
-              record: 'flask_latency_per_30',
-              expr: 'rate(flask_http_request_duration_seconds_sum[30s])/rate(flask_http_request_duration_seconds_count[30s])',
+              record: 'edge_server_request_rate_for_30',
+              expr: 'rate(django_http_requests_total_by_view_transport_method_total{view="edge-server-metrics"} [30s])',
             },
             {
-              record: 'flask_latency_per_60',
-              expr: 'rate(flask_http_request_duration_seconds_sum[60s])/rate(flask_http_request_duration_seconds_count[60s])',
+              record: 'edge_server_latency_for_30',
+              expr: 'rate(django_http_requests_latency_seconds_by_view_method_sum{view="edge-server-metrics"} [30s])/rate(django_http_requests_latency_seconds_by_view_method_count{view="edge-server-metrics"} [30s])',
             },
             {
-              record: 'flask_latency_per_120',
-              expr: 'rate(flask_http_request_duration_seconds_sum[120s])/rate(flask_http_request_duration_seconds_count[120s])',
+              record: 'edge_server_cpu_for_60',
+              expr: 'rate(container_cpu_usage_seconds_total{pod=~"edge-server-tf.*", container="edge-server-tf"}[60s])',
+            },
+            {
+              record: 'edge_server_memory',
+              expr: 'container_memory_working_set_bytes{pod=~"edge-server-tf.*", container="edge-server-tf"}',
+            },
+            {
+              record: 'edge_server_pod_count',
+              expr: 'count(count by (pod) (django_http_requests_total_by_view_transport_method_total{view="edge-server-metrics"}))',
             },
           ],
         },

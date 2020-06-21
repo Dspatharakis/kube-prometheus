@@ -9,6 +9,17 @@ spec:
   baseImage: quay.io/prometheus/alertmanager
   nodeSelector:
     kubernetes.io/os: linux
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - k-node1
+            - k-node2
+            - k-node3
   replicas: 3
   securityContext:
     fsGroup: 2000
